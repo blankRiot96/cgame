@@ -7,5 +7,9 @@
 		"**/.DS_Store": true,
 		"**/*.o": true,
 		"**/*.exe": true,
+	},
+	"files.associations": {
+		"resource_dir.h": "c",
+		"state_dispatcher.h": "c"
 	}
 }
