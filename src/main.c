@@ -33,21 +33,41 @@ int main() {
 	InitWindow(1280, 800, "Hello Raylib");
 	SearchAndSetResourceDir("resources");
 
+	Camera3D camera = {0};
+	camera.position = (Vector3){10.0f, 10.0f, 10.0f}; // Camera position
+	camera.target = (Vector3){0.0f, 0.0f, 0.0f};      // Camera looking at point
+	camera.up = (Vector3){0.0f, 1.0f,
+	                      0.0f}; // Camera up vector (rotation towards target)
+	camera.fovy = 45.0f;         // Camera field-of-view Y
+	camera.projection = CAMERA_PERSPECTIVE; // Camera projection type
+	Vector3 cube_pos = {-10.0f, -10.0f, -2.0f};
+
+	Model shape = LoadModel("shape.obj");
+	Vector3 shape_pos = {0.0f, 0.0f, 0.0f};
+
 	struct Wabbit wabbit = {.pos = (Vector2){100, 100},
 	                        .image = LoadTexture("wabbit_alpha.png")};
 
 	while (!WindowShouldClose()) {
 		// Update
-		update_wabbit(&wabbit);
+		UpdateCamera(&camera, CAMERA_FREE);
+		// update_wabbit(&wabbit);
 
 		// Draw
 		BeginDrawing();
 		ClearBackground(BLACK);
 
+		BeginMode3D(camera);
+		DrawCube(cube_pos, 1.0f, 1.0f, 1.0f, RED);
+		DrawCubeWires(cube_pos, 1.0f, 1.0f, 1.0f, BLUE);
+
+		DrawModel(shape, shape_pos, 1.0, WHITE);
+		DrawModelWires(shape, shape_pos, 1.0, BLACK);
+		EndMode3D();
+
 		DrawFPS(10, 10);
 		DrawText("C programming yeahhh", 200, 200, 20, WHITE);
 		render_wabbit(&wabbit);
-
 		EndDrawing();
 	}
 
