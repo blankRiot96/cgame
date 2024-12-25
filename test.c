@@ -1,66 +1,44 @@
-#include <stdint.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
 
-#define BASE64_ALPHABET                                                        \
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+typedef struct {
+    int square_x;
+    int square_y;
+} Packet;
 
-void ipv4_to_base64(const char *ipv4, char *output) {
-    uint32_t ip_as_int = 0;
-    int segments[4];
+void serialize_packet(Packet *p, char *buffer) {
+    // Convert each field to network byte order if needed
+    int square_x_network = htonl(p->square_x);
+    int square_y_network = htonl(p->square_y);
 
-    if (sscanf(ipv4, "%d.%d.%d.%d", &segments[0], &segments[1], &segments[2],
-               &segments[3]) != 4) {
-        fprintf(stderr, "Invalid IPv4 address format.\n");
-        strcpy(output, "ERROR");
-        return;
-    }
-
-    ip_as_int = (segments[0] << 24) | (segments[1] << 16) | (segments[2] << 8) |
-                segments[3];
-
-    for (int i = 0; i < 6; i++) {
-        int index = (ip_as_int >> (30 - i * 6)) & 0x3F;
-        output[i] = BASE64_ALPHABET[index];
-    }
-    output[6] = '\0';
+    // Copy each field into the buffer
+    memcpy(buffer, &square_x_network, sizeof(int));
+    memcpy(buffer + sizeof(int), &square_y_network, sizeof(int));
 }
 
-void base64_to_ipv4(const char *base64, char *output) {
-    uint32_t ip_as_int = 0;
-
-    if (strlen(base64) != 6) {
-        fprintf(stderr, "Invalid Base64 code length.\n");
-        strcpy(output, "ERROR");
-        return;
-    }
-
-    for (int i = 0; i < 6; i++) {
-        const char *ptr = strchr(BASE64_ALPHABET, base64[i]);
-        if (!ptr) {
-            fprintf(stderr, "Invalid character in Base64 code.\n");
-            strcpy(output, "ERROR");
-            return;
-        }
-        ip_as_int = (ip_as_int << 6) | (ptr - BASE64_ALPHABET);
-    }
-
-    snprintf(output, 16, "%d.%d.%d.%d", (ip_as_int >> 24) & 0xFF,
-             (ip_as_int >> 16) & 0xFF, (ip_as_int >> 8) & 0xFF,
-             ip_as_int & 0xFF);
+void deserialize_packet(char *buffer, Packet *p) {
+    // Copy the data from the buffer and convert from network byte order
+    p->square_x = ntohl(*(int *)buffer);
+    p->square_y = ntohl(*(int *)(buffer + sizeof(int)));
 }
 
 int main() {
-    const char *ipv4 = "192.168.1.1";
-    char base64_code[7];
-    char recovered_ipv4[16];
+    Packet packet = {10, 20};
+    char buffer[2 * sizeof(int)]; // Buffer to hold the serialized data
 
-    ipv4_to_base64(ipv4, base64_code);
-    base64_to_ipv4(base64_code, recovered_ipv4);
+    serialize_packet(&packet, buffer);
 
-    printf("IPv4 Address: %s\n", ipv4);
-    printf("Base64 Code: %s\n", base64_code);
-    printf("Recovered IPv4: %s\n", recovered_ipv4);
+    // Print the serialized buffer (for debugging)
+    for (int i = 0; i < sizeof(buffer); ++i) {
+        printf("%02x ", (unsigned char)buffer[i]);
+    }
+    printf("\n");
+
+    Packet deserizalized_packet;
+    deserialize_packet(buffer, &deserizalized_packet);
+
+    printf("square_x: %d, square_y: %d\n", packet.square_x, packet.square_y);
 
     return 0;
 }

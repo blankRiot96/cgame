@@ -4,16 +4,15 @@
 #include "raygui.h"
 #include "raylib.h"
 #include "shared.h"
-#include <stdio.h>
-
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
+#include <pthread.h>
+#include <stdio.h>
 
 #define MAX_CODE_LENGTH 6
-
-const int BUTTON_WIDTH = 300;
-const int BUTTON_HEIGHT = 100;
+#define BUTTON_WIDTH 300
+#define BUTTON_HEIGHT 100
 
 char *get_internet_ip() {
     struct ifaddrs *ifaddr, *ifa;
@@ -70,6 +69,19 @@ void render_menu_state() {
         char code[6];
         ipv4_to_base64(ip, code);
         strncpy(shared.server_code, code, sizeof(shared.server_code) - 1);
+
+        // Start the server in a separate thread
+        pthread_t server_thread;
+        if (pthread_create(&server_thread, NULL, start_server, NULL) != 0) {
+            perror("Failed to create server thread");
+        }
+
+        // Start the client in a separate thread as well
+        pthread_t client_thread;
+        if (pthread_create(&client_thread, NULL, start_client, NULL) != 0) {
+            perror("Failed to create client thread");
+        }
+
         shared.current_state = LOBBY;
     }
 }

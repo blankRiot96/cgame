@@ -7,8 +7,22 @@
 
 #define BASE64_ALPHABET                                                        \
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+#define PORT 8080
+#define BUFFER_SIZE 1024
+#define MAX_CLIENTS 10
+
+typedef struct {
+    int square_x;
+    int square_y;
+} Packet;
 
 void ipv4_to_base64(const char *ipv4, char *output);
 void base64_to_ipv4(const char *base64, char *output);
+
+void *start_server(void *arg);
+void *start_client(void *arg);
+
+void serialize_packet(Packet *p, char *buffer);
+void deserialize_packet(char *buffer, Packet *p);
 
 #endif

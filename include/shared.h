@@ -4,6 +4,7 @@
 #include "game_state.h"
 #include "lobby_state.h"
 #include "menu_state.h"
+#include "networking.h"
 #include "server_state.h"
 #include "state_enums.h"
 
@@ -19,6 +20,9 @@ typedef struct {
 
     char server_ipv4[15];
     char server_code[6];
+    char client_name[30];
+
+    Packet client_packet;
 } Shared;
 
 extern Shared shared;
