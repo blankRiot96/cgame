@@ -1,0 +1,4 @@
+- Start a server in main menu when 'CREATE SERVER' button is clicked
+- Start a client when 'JOIN' button is clicked in server state
+- Allow some kind of interaction in lobby
+- Test interaction with roomies' computer

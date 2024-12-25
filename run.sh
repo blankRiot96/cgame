@@ -3,5 +3,4 @@
 cd build
 ./premake5 gmake2
 cd ..
-make
-./bin/Debug/cgame
+make &&./bin/Debug/cgame

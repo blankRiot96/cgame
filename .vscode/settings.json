@@ -10,6 +10,9 @@
 	},
 	"files.associations": {
 		"resource_dir.h": "c",
-		"state_dispatcher.h": "c"
+		"state_dispatcher.h": "c",
+		"shared.h": "c",
+		"server_state.h": "c",
+		"types.h": "c"
 	}
 }

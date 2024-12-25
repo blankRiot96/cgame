@@ -12,6 +12,14 @@ void update_current_state() {
         update_menu_state();
         break;
 
+    case SERVER_SELECTION:
+        update_server_state();
+        break;
+
+    case LOBBY:
+        update_lobby_state();
+        break;
+
     default:
         break;
     }
@@ -24,6 +32,14 @@ void render_current_state() {
 
     case MENU:
         render_menu_state();
+        break;
+
+    case SERVER_SELECTION:
+        render_server_state();
+        break;
+
+    case LOBBY:
+        render_lobby_state();
         break;
 
     default:
