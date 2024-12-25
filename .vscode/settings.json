@@ -13,6 +13,7 @@
 		"state_dispatcher.h": "c",
 		"shared.h": "c",
 		"server_state.h": "c",
-		"types.h": "c"
+		"types.h": "c",
+		"ctype.h": "c"
 	}
 }

@@ -1,9 +1,4 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-
-#define BASE64_ALPHABET                                                        \
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+#include "networking.h"
 
 void ipv4_to_base64(const char *ipv4, char *output) {
     uint32_t ip_as_int = 0;
@@ -48,19 +43,4 @@ void base64_to_ipv4(const char *base64, char *output) {
     snprintf(output, 16, "%d.%d.%d.%d", (ip_as_int >> 24) & 0xFF,
              (ip_as_int >> 16) & 0xFF, (ip_as_int >> 8) & 0xFF,
              ip_as_int & 0xFF);
-}
-
-int main() {
-    const char *ipv4 = "192.168.1.1";
-    char base64_code[7];
-    char recovered_ipv4[16];
-
-    ipv4_to_base64(ipv4, base64_code);
-    base64_to_ipv4(base64_code, recovered_ipv4);
-
-    printf("IPv4 Address: %s\n", ipv4);
-    printf("Base64 Code: %s\n", base64_code);
-    printf("Recovered IPv4: %s\n", recovered_ipv4);
-
-    return 0;
 }
