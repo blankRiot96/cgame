@@ -22,7 +22,7 @@ void base64_to_ipv4(const char *base64, char *output);
 void *start_server(void *arg);
 void *start_client(void *arg);
 
-void serialize_packet(Packet *p, char *buffer);
-void deserialize_packet(char *buffer, Packet *p);
+void serialize_packet(Packet *p, char *buffer, int *offset);
+void deserialize_packet(char *buffer, Packet *p, int *offset);
 
 #endif

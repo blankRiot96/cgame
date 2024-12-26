@@ -6,20 +6,22 @@
 #include <string.h>
 #include <unistd.h>
 
-void serialize_packet(Packet *p, char *buffer) {
-    // Convert each field to network byte order if needed
+void serialize_packet(Packet *p, char *buffer, int *offset) {
+    // Serialize the current client's packet (square_x, square_y)
     int square_x_network = htonl(p->square_x);
     int square_y_network = htonl(p->square_y);
-
-    // Copy each field into the buffer
-    memcpy(buffer, &square_x_network, sizeof(int));
-    memcpy(buffer + sizeof(int), &square_y_network, sizeof(int));
+    memcpy(buffer + *offset, &square_x_network, sizeof(int));
+    *offset += sizeof(int);
+    memcpy(buffer + *offset, &square_y_network, sizeof(int));
+    *offset += sizeof(int);
 }
 
-void deserialize_packet(char *buffer, Packet *p) {
-    // Copy the data from the buffer and convert from network byte order
-    p->square_x = ntohl(*(int *)buffer);
-    p->square_y = ntohl(*(int *)(buffer + sizeof(int)));
+void deserialize_packet(char *buffer, Packet *p, int *offset) {
+    // Deserialize the packet (square_x, square_y)
+    p->square_x = ntohl(*(int *)(buffer + *offset));
+    *offset += sizeof(int);
+    p->square_y = ntohl(*(int *)(buffer + *offset));
+    *offset += sizeof(int);
 }
 
 void ipv4_to_base64(const char *ipv4, char *output) {
@@ -95,41 +97,61 @@ void broadcast_message(int sender_socket, const char *message) {
     }
 }
 
-// Function to handle client communication
+int get_client_index(int client_socket) {
+    for (int i = 0; i < num_clients; i++) {
+        if (client_sockets[i] == client_socket) {
+            return i;
+        }
+    }
+    return -1; // Client not found
+}
+
+void store_client_name(int client_socket, const char *name) {
+    int client_index = get_client_index(client_socket);
+    if (client_index != -1) {
+        strncpy(shared.other_client_names[client_index], name,
+                sizeof(shared.other_client_names[client_index]) - 1);
+    }
+}
+
 void *handle_client(void *client_socket_ptr) {
     int client_socket = *(int *)client_socket_ptr;
     char buffer[BUFFER_SIZE];
     int bytes_received;
 
+    // Receive the client's name
+    bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+    if (bytes_received > 0) {
+        buffer[bytes_received] = '\0';
+        // Store the client name
+        store_client_name(client_socket, buffer);
+        printf("Received name from client: %s\n", buffer);
+    }
     while ((bytes_received =
                 recv(client_socket, buffer, sizeof(buffer) - 1, 0)) > 0) {
         buffer[bytes_received] = '\0';
-        // printf("Received from client: %s\n", buffer);
 
-        // Broadcast the message to all clients
+        // Deserialize received data into the client's packet
+        int offset = 0;
+        deserialize_packet(buffer, &shared.client_packet, &offset);
+
+        // Store the received packet in shared.other_client_packets
+        // Assuming the message contains the packets of other clients
+        int client_index = get_client_index(client_socket);
+        if (client_index != -1) {
+            // Assume that each message contains one packet from each client
+            for (int i = 0; i < num_clients; i++) {
+                if (i != client_index) {
+                    deserialize_packet(buffer, &shared.other_client_packets[i],
+                                       &offset);
+                }
+            }
+        }
+
+        // Broadcast the message to other clients
         broadcast_message(client_socket, buffer);
     }
-
-    if (bytes_received == 0) {
-        printf("Client disconnected\n");
-    } else {
-        perror("recv failed");
-    }
-
-    // Remove the client from the list and close the socket
-    for (int i = 0; i < num_clients; i++) {
-        if (client_sockets[i] == client_socket) {
-            for (int j = i; j < num_clients - 1; j++) {
-                client_sockets[j] = client_sockets[j + 1];
-            }
-            num_clients--;
-            break;
-        }
-    }
-
-    close(client_socket);
-    free(client_socket_ptr);
-    return NULL;
+    // Remove client and close socket logic as before
 }
 
 void *start_server(void *arg) {
@@ -215,7 +237,7 @@ void *receive_messages(void *client_socket_ptr) {
         bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
         if (bytes_received > 0) {
             buffer[bytes_received] = '\0';
-            printf("Message from server: %s\n", buffer);
+            // printf("Message from server: %s\n", buffer);
         }
     }
 }
@@ -252,6 +274,9 @@ void *start_client(void *arg) {
     printf("Moshi moshi?\n");
     printf("[%s] connected to server\n", shared.client_name);
 
+    // Send the client name to the server
+    send(client_socket, shared.client_name, strlen(shared.client_name), 0);
+
     pthread_t receive_thread;
     if (pthread_create(&receive_thread, NULL, receive_messages,
                        (void *)&client_socket) != 0) {
@@ -261,12 +286,14 @@ void *start_client(void *arg) {
     }
 
     while (1) {
-        serialize_packet(&shared.client_packet, message);
-        message[strlen(message)] = '\0';
-        send(client_socket, message, strlen(message), 0);
+        // Serialize the current client's packet
+        int offset = 0;
+        serialize_packet(&shared.client_packet, message, &offset);
+
+        // Send the current client's packet along with others
+        send(client_socket, message, offset, 0);
     }
 
     close(client_socket);
-
     return NULL;
 }

@@ -21,8 +21,10 @@ typedef struct {
     char server_ipv4[15];
     char server_code[7];
     char client_name[30];
+    char other_client_names[MAX_CLIENTS][30];
 
     Packet client_packet;
+    Packet other_client_packets[MAX_CLIENTS];
 } Shared;
 
 extern Shared shared;
