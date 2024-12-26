@@ -1,4 +1,5 @@
 #include "lobby_state.h"
+#include "networking.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "shared.h"
@@ -28,28 +29,38 @@ void render_wabbit(const Wabbit *wabbit) {
 }
 
 Wabbit square = (Wabbit){.pos = (Vector2){100, 100}};
-
 void update_lobby_state() {
     update_wabbit(&square);
     shared.client_packet.square_x = square.pos.x;
     shared.client_packet.square_y = square.pos.y;
+
+    // Broadcast the client's updated state using shared.client_socket
+    broadcast_client_state(shared.client_socket);
 }
 
 void render_lobby_state() {
+    // Clear the screen before rendering to avoid flickering
+    ClearBackground(BLACK); // Clear the screen with a black background
+
     DrawText("LobbyState", 0, 0, 20, WHITE);
     DrawText(shared.server_code, 0, 100, 20, RED);
     render_wabbit(&square); // Draw the current client
 
     // Render other clients' squares and names
     for (int i = 0; i < MAX_CLIENTS; i++) {
-        if (shared.other_client_names[i][0] !=
+        if (shared.other_client_names[i][0] ==
             '\0') { // Check if client name exists
-            DrawText(shared.other_client_names[i],
-                     shared.other_client_packets[i].square_x,
-                     shared.other_client_packets[i].square_y - 50, 16, GREEN);
-            DrawRectangle(shared.other_client_packets[i].square_x,
-                          shared.other_client_packets[i].square_y, 50, 50,
-                          BLUE);
+            continue;
         }
+        if (shared.other_client_names[i] == shared.client_name) {
+            continue;
+        }
+        printf("%s\n", shared.other_client_names[i]);
+        printf("%s\n", shared.client_name);
+        DrawText(shared.other_client_names[i],
+                 shared.other_client_packets[i].square_x,
+                 shared.other_client_packets[i].square_y - 50, 16, GREEN);
+        DrawRectangle(shared.other_client_packets[i].square_x,
+                      shared.other_client_packets[i].square_y, 50, 50, BLUE);
     }
 }

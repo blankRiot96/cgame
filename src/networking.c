@@ -119,14 +119,17 @@ void *handle_client(void *client_socket_ptr) {
     char buffer[BUFFER_SIZE];
     int bytes_received;
 
-    // Receive the client's name
+    // Receive the client's name first
     bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received > 0) {
         buffer[bytes_received] = '\0';
         // Store the client name
         store_client_name(client_socket, buffer);
-        printf("Received name from client: %s\n", buffer);
     }
+
+    // After storing the name, send the full list of clients to everyone
+    broadcast_client_state(client_socket);
+
     while ((bytes_received =
                 recv(client_socket, buffer, sizeof(buffer) - 1, 0)) > 0) {
         buffer[bytes_received] = '\0';
@@ -228,6 +231,22 @@ void *start_server(void *arg) {
     return NULL;
 }
 
+void broadcast_client_state(int sender_socket) {
+    char buffer[BUFFER_SIZE];
+    int offset = 0; // Initialize offset
+
+    for (int i = 0; i < num_clients; i++) {
+        if (client_sockets[i] != sender_socket) {
+            // Serialize the client's packet and name, and send it
+            serialize_packet(&shared.client_packet, buffer,
+                             &offset); // Pass offset
+            // Send the packet and name
+            send(client_sockets[i], buffer, offset,
+                 0); // Use offset for correct size
+        }
+    }
+}
+
 void *receive_messages(void *client_socket_ptr) {
     int client_socket = *(int *)client_socket_ptr;
     char buffer[BUFFER_SIZE];
@@ -237,7 +256,18 @@ void *receive_messages(void *client_socket_ptr) {
         bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
         if (bytes_received > 0) {
             buffer[bytes_received] = '\0';
-            // printf("Message from server: %s\n", buffer);
+
+            // Deserialize the received packet into the respective client's data
+            int offset = 0; // Initialize offset
+            deserialize_packet(buffer, &shared.client_packet,
+                               &offset); // Pass offset
+
+            // Update other client states
+            for (int i = 0; i < MAX_CLIENTS; i++) {
+                if (client_sockets[i] != client_socket) {
+                    shared.other_client_packets[i] = shared.client_packet;
+                }
+            }
         }
     }
 }
@@ -253,6 +283,7 @@ void *start_client(void *arg) {
         perror("Socket creation failed");
         exit(1);
     }
+    shared.client_socket = client_socket;
 
     // Prepare server address
     server_addr.sin_family = AF_INET;

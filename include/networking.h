@@ -25,4 +25,6 @@ void *start_client(void *arg);
 void serialize_packet(Packet *p, char *buffer, int *offset);
 void deserialize_packet(char *buffer, Packet *p, int *offset);
 
+void broadcast_client_state(int sender_socket);
+
 #endif
