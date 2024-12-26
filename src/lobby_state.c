@@ -52,11 +52,11 @@ void render_lobby_state() {
             '\0') { // Check if client name exists
             continue;
         }
-        if (shared.other_client_names[i] == shared.client_name) {
+
+        if (strcmp(shared.client_name, shared.other_client_names[i]) == 0) {
             continue;
         }
-        printf("%s\n", shared.other_client_names[i]);
-        printf("%s\n", shared.client_name);
+        printf("%d\n", shared.other_client_packets[i].square_x);
         DrawText(shared.other_client_names[i],
                  shared.other_client_packets[i].square_x,
                  shared.other_client_packets[i].square_y - 50, 16, GREEN);
