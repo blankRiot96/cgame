@@ -1,44 +1,63 @@
-#include <arpa/inet.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-typedef struct {
-    int square_x;
-    int square_y;
-} Packet;
+#define BASE64_ALPHABET                                                        \
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
-void serialize_packet(Packet *p, char *buffer) {
-    // Convert each field to network byte order if needed
-    int square_x_network = htonl(p->square_x);
-    int square_y_network = htonl(p->square_y);
+void ipv4_to_base64(const char *ipv4, char *output) {
+    uint32_t ip_as_int = 0;
+    int segments[4];
 
-    // Copy each field into the buffer
-    memcpy(buffer, &square_x_network, sizeof(int));
-    memcpy(buffer + sizeof(int), &square_y_network, sizeof(int));
-}
-
-void deserialize_packet(char *buffer, Packet *p) {
-    // Copy the data from the buffer and convert from network byte order
-    p->square_x = ntohl(*(int *)buffer);
-    p->square_y = ntohl(*(int *)(buffer + sizeof(int)));
-}
-
-int main() {
-    Packet packet = {10, 20};
-    char buffer[2 * sizeof(int)]; // Buffer to hold the serialized data
-
-    serialize_packet(&packet, buffer);
-
-    // Print the serialized buffer (for debugging)
-    for (int i = 0; i < sizeof(buffer); ++i) {
-        printf("%02x ", (unsigned char)buffer[i]);
+    if (sscanf(ipv4, "%d.%d.%d.%d", &segments[0], &segments[1], &segments[2],
+               &segments[3]) != 4) {
+        fprintf(stderr, "Invalid IPv4 address format.\n");
+        strcpy(output, "ERROR");
+        return;
     }
-    printf("\n");
 
-    Packet deserizalized_packet;
-    deserialize_packet(buffer, &deserizalized_packet);
+    ip_as_int = (segments[0] << 24) | (segments[1] << 16) | (segments[2] << 8) |
+                segments[3];
 
-    printf("square_x: %d, square_y: %d\n", packet.square_x, packet.square_y);
-
-    return 0;
+    for (int i = 0; i < 6; i++) {
+        int index = (ip_as_int >> (30 - i * 6)) & 0x3F;
+        output[i] = BASE64_ALPHABET[index];
+    }
+    output[6] = '\0';
 }
+
+void base64_to_ipv4(const char *base64, char *output) {
+    uint32_t ip_as_int = 0;
+
+    // Allow 5 or 6 characters for Base64 input
+    size_t length = strlen(base64);
+    if (length != 5 && length != 6) {
+        fprintf(stderr, "Invalid Base64 code length: %zu\n", length);
+        strcpy(output, "ERROR");
+        return;
+    }
+
+    for (size_t i = 0; i < length; i++) {
+        const char *ptr = strchr(BASE64_ALPHABET, base64[i]);
+        if (!ptr) {
+            fprintf(stderr, "Invalid character in Base64 code: %c\n",
+                    base64[i]);
+            strcpy(output, "ERROR");
+            return;
+        }
+        ip_as_int = (ip_as_int << 6) | (ptr - BASE64_ALPHABET);
+    }
+
+    // Adjust for shorter inputs (5 characters = 30 bits)
+    if (length == 5) {
+        ip_as_int <<= 2; // Add 2 padding bits
+    }
+
+    snprintf(output, 16, "%d.%d.%d.%d", (ip_as_int >> 24) & 0xFF,
+             (ip_as_int >> 16) & 0xFF, (ip_as_int >> 8) & 0xFF,
+             ip_as_int & 0xFF);
+}
+
+int main() { return 0; }

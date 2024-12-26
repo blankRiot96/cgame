@@ -5,6 +5,7 @@ typedef struct {
 
 } MenuState;
 
+void init_menu_state();
 void update_menu_state();
 void render_menu_state();
 

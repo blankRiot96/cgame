@@ -14,6 +14,7 @@
 		"shared.h": "c",
 		"server_state.h": "c",
 		"types.h": "c",
-		"ctype.h": "c"
+		"ctype.h": "c",
+		"stdio.h": "c"
 	}
 }

@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#define MAX_CODE_LENGTH 6
+#define MAX_CODE_LENGTH 7
 #define BUTTON_WIDTH 300
 #define BUTTON_HEIGHT 100
 
@@ -46,15 +46,28 @@ char *get_internet_ip() {
     return ip_address;
 }
 
+char client_name[30] = "";
+
+void init_menu_state() { GuiSetStyle(DEFAULT, TEXT_SIZE, 32); }
+
 void update_menu_state() {}
 
 void render_menu_state() {
     DrawText("< CGAME >", (SCREEN_WIDTH / 2) - 150, 100, 50, WHITE);
 
+    GuiTextBox((Rectangle){(SCREEN_WIDTH / 2) - (BUTTON_WIDTH / 2),
+                           (SCREEN_HEIGHT / 2) - BUTTON_HEIGHT - 50,
+                           BUTTON_WIDTH, 50},
+               client_name, 30, true);
+
     if (GuiButton((Rectangle){(SCREEN_WIDTH / 2) - (BUTTON_WIDTH / 2),
                               (SCREEN_HEIGHT / 2) - (BUTTON_HEIGHT / 2),
                               BUTTON_WIDTH, BUTTON_HEIGHT},
                   "FIND SERVER")) {
+        strncpy(shared.client_name, client_name,
+                sizeof(shared.client_name) - 1);
+        shared.client_name[sizeof(shared.client_name) - 1] = '\0';
+
         init_server_state();
         shared.current_state = SERVER_SELECTION;
     }
@@ -65,10 +78,25 @@ void render_menu_state() {
                   "CREATE SERVER")) {
         char *ip = get_internet_ip();
         strncpy(shared.server_ipv4, ip, sizeof(shared.server_ipv4) - 1);
+        shared.server_ipv4[sizeof(shared.server_ipv4) - 1] = '\0';
 
-        char code[6];
+        char code[7]; // 6 base64 chars + 1 for the null terminator
         ipv4_to_base64(ip, code);
+
+        // Debugging log to ensure correct base64 encoding
+        printf("Base64 Encoded IP: %s\n", code);
+
         strncpy(shared.server_code, code, sizeof(shared.server_code) - 1);
+        shared.server_code[sizeof(shared.server_code) - 1] =
+            '\0'; // Null-terminate
+
+        printf("\n\nSERVER CODE: %s\n\n", shared.server_code);
+
+        strncpy(shared.client_name, client_name,
+                sizeof(shared.client_name) - 1);
+        shared.client_name[sizeof(shared.client_name) - 1] = '\0';
+
+        printf("CLIENT NAME: %s\n");
 
         // Start the server in a separate thread
         pthread_t server_thread;

@@ -19,7 +19,7 @@ typedef struct {
     LobbyState lobby_state;
 
     char server_ipv4[15];
-    char server_code[6];
+    char server_code[7];
     char client_name[30];
 
     Packet client_packet;

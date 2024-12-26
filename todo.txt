@@ -1,4 +1,3 @@
-- Fire up example and check it out
 - Try to use example to integrate into game's server to send square position packets across clients
 - Make squares in lobby and check if they're moving accordingly
 - Test interaction with roomies' computer

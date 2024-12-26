@@ -10,6 +10,8 @@ int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hello Raylib");
     SearchAndSetResourceDir("resources");
 
+    init_menu_state();
+
     while (!WindowShouldClose()) {
         update_current_state();
 
